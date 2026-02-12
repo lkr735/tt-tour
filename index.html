@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TT World Tour: Specimen Analysis</title>
+    <style>
+        :root {
+            --primary: #d00000; 
+            --accent: #0077b6;  
+            --ui-bg: #f8f9fa;   
+        }
+
+        body {
+            background-color: #e9ecef;
+            color: #212529;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-wrapper {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            background-color: #ffffff;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg');
+            background-size: 100% 100%;
+<!--             filter: opacity(0.7) grayscale(0.4);  -->
+            border: 4px solid #adb5bd;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 10;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            border-radius: 5px;
+            transition: transform 0.1s;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        .card-content {
+            background: #fff;
+            color: #000;
+            padding: 25px;
+            border: 5px solid var(--accent);
+            max-width: 400px;f
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .trip-img {
+            height: 100%;
+            max-width: 1000px; 
+            object-fit: contain;
+            background: #f0f0f0;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            margin-bottom: 15px;
+<!--             width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            margin-bottom: 15px; -->
+        }
+
+        .header { 
+            margin-bottom: 15px; 
+            font-size: 1rem; 
+            color: #495057; 
+            font-weight: bold; 
+            background: #fff; 
+            padding: 8px 25px;
+            border-radius: 30px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    Match Venue: <span id="loc-display" style="color:var(--accent)">Games Won</span>: <span id="stress-display" style="color:var(--primary)">0%</span>
+</div>
+
+<div id="game-wrapper">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <div id="start-overlay" class="overlay">
+        <h1 style="color: #212529; margin: 0;">TABLE TENNIS WORLD TOUR CHAMPIONSHIP</h1>
+        <p style="color: #6c757d;">Win this game with a success rate of >50%!</p>
+        <button onclick="startGame()">INITIALIZE TOUR</button>
+    </div>
+
+    <div id="roast-overlay" class="overlay" style="display:none;">
+        <h1 style="color: var(--primary)">YOU LOST THIS POINT</h1>
+        <p id="roast-text" style="color: #343a40; font-weight: bold; margin-bottom: 10px;"></p>
+        <button onclick="retry()">NEXT POINT</button>
+    </div>
+
+    <div id="postcard-overlay" class="overlay" style="display:none;">
+        <div class="card-content">
+            <h2 id="p-title" style="margin: 0; color: var(--accent);"></h2>
+            <img id="p-image" src="" class="trip-img">
+            <p id="p-body" style="margin: 10px 0; line-height: 1.4;"></p>
+            <button onclick="nextLevel()" style="width:100%; margin-top: 10px;">NEXT VENUE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- 1. ACCESS CONTROL ---
+// const pass = prompt("Enter when did we start dating (MMYY):");
+// if (pass !== "0423") { 
+//   const pass = prompt("Too bad, you wer")
+//   document.body.innerHTML = "<h1>ACCESS DENIED: MEMORY ERROR</h1>"; 
+// // }
+function initiateSecurity() {
+    let pass = prompt("Enter when did we start dating (MMYY):");
+    
+    if (pass === "0423") {
+        // Correct first time - proceed to game
+        return true;
+    } else {
+        // Wrong first time - show teasing meme and ask secondary question
+        alert("ACCESS DENIED: You were always bad with dates haha!");
+        
+        // This is a "trick" to show a meme using a basic alert or a custom temporary div
+        // For simplicity, we will use a secondary prompt that is harder to miss.
+        
+        let secondaryPass = prompt("I'll give you another chance! \n\nRecovery Question: Which airline company staff did you say 'You too' when they said 'Have a great flight'? (no space, lowercase)");
+        
+        if (secondaryPass === "cathaypacific") { // Change 'sushi' to your actual answer
+            alert("Haha, even you are sometimes socially awkward like me, you may proceed with the tour!");
+            return true;
+        } else {
+            // Permanent lock if they fail twice
+            document.body.innerHTML = `
+                <div style="text-align:center; padding-top:100px; font-family:monospace;">
+                    <h1 style="color:red;">PERMANENT LOCKOUT</h1>
+                    <img src="https://i.redd.it/vkiegjwylz0g1.gif" style="max-width:300px; border:2px solid red;">
+                    <p>Are you Ghajini because I don’t mind reminding you how amazing you are:)</p>
+                </div>`;
+            return false;
+        }
+    }
+}
+
+// Execute security before anything else
+// if (!initiateSecurity()) {
+//     throw new Error("Security Lockout because you are bad");
+// }
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// --- 2. DESTINATION DATABASE (Lat/Lng) ---
+const rawDestinations = [
+    { name: "KANCAMAGUS", lat: 58.5074, lng: -82.1778, msg: "The first time we ever felt like our relationship will go strong for long!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884829/kancamagas_nnlr0w.jpg" },
+    { name: "MUMBAI", lat: 38.7128, lng: 65.060, msg: "Our first concert in India (Coldplay), got to meet your friends and also saw your (fake ;p) insti!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884829/mumbai_zvtyc9.jpg" },
+    { name: "ACADIA", lat: 59.6762, lng: -80.6503, msg: "My first National Park in the US and boy it was a scary trip with so many shenanigans!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884830/acadia_fifxra.jpg" },
+    { name: "BAY AREA",lat: 62.3128, lng: -128.0060, msg: "Driving me to my first day of work + helping me move to a new place", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770889024/bay_area_uphfd2.jpg" },
+  { name: "CRANE BEACH", lat: 58.5074, lng: -82.1778, msg: "Got to see aurora with you!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884830/cranebeach_sdabrf.jpg" },
+      { name: "HONG KONG 1", lat: 45, lng: 100, msg: "We went to the 'Happiest Place on Earth'", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884829/hongkong2_iihs6j.jpg" },
+    { name: "SHENANDOAH", lat: 57.5074, lng: -84.1778, msg: "The trip where others found out that I like being the small spoon haha!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884832/shenandoah_lned20.jpg" },
+      { name: "GRAD GALA 1", lat: 58.5074, lng: -82.1778, msg: "My first grad gala and the first time in several years where I wore formal dress haha", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770886256/gradgala1_mw3wul.jpg" },
+    { name: "VANCOUVER", lat: 66.7128, lng: -130.0060, msg: "Our second trip to Canada but this time paid by MIT lol!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884832/vancouver_n77ydd.jpg" },
+      { name: "CARDIGAN STATE PARK", lat: 58.5074, lng: -82.1778, msg: "The one where we hiked the final part leaving your sister behind lmao", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884832/cardigan_xmzxvd.jpg" },
+    { name: "HONG KONG 2", lat: 45, lng: 100, msg: "When we spent 3 hours trying to figure out bag locker situation", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884829/hong_kong1_o3rkln.jpg" },
+    { name: "MONTREAL", lat: 62.6762, lng: -85.6503, msg: "Our first trip to a different country (and the one where I planned most of the stuff unlike other trips where you do the heavy lifting)", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884830/montreal_ym4ofi.jpg" },
+    { name: "LAKE TAHOE", lat: 62.3128, lng: -128.0060, msg: "4th July fireworks + triple date + kayaking with you!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884833/tahoe_hwsuvr.jpg" },
+    { name: "DC", lat: 58.5074, lng: -82.1778, msg: "Your favourite US city with your favourite person:P", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884831/dc_ffda8x.jpg" },
+    { name: "JAIPUR", lat: 45.7128, lng: 65.060, msg: "Mrigi is an excellent local guide, would 100% recommend, 11/10 experience - Sid (from Trip Advisor)", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884831/jaipur_outtcr.jpg" },
+   { name: "NEW YORK", lat: 58.5074, lng: -82.1778, msg: "Sid is an excellent NYC guide, would 110% recommend, 12/10 experience - Mrigi (from Trip Advisor)", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884833/nyc_bjpwqj.jpg" },
+    { name: "YOSEMITE", lat: 62.3128, lng: -128.0060, msg: "Oof, this hike was sooo hard because of the bad weather!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884831/yosemite_u1sr72.jpg" },
+    { name: "MAINE", lat: 58.5074, lng: -82.1778, msg: "Getting to experience my first eclipse (one of the top 3 visual moments of my life) with you!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884831/maine_j62qnx.jpg" },
+    { name: "GRAD GALA 2 ", lat: 58.5074, lng: -82.1778, msg: "When both of us looked hot 🔥", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884830/gradgala2_tshp7u.jpg" },
+    { name: "PINNACLES", lat: 62.3128, lng: -128.0060, msg: "Hiking with low (no) light lmao + beautiful night sky (my first in-person Milky Way view)!!", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884829/pinnacles_yrxjdc.jpg" },
+    { name: "THESIS DEFENCE", lat: 58.5074, lng: -82.1778, msg: "I am so lucky to have you help me with my grad school, definitely made grad school life much easier and fun with you:)", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884832/defence_hfep1x.jpg" },
+    { name: "CANTON", lat: 58.5074, lng: -82.1778, msg: "The kiss behind the trees in fall foliage when Naman, Richa, and Ashutosh were far behind on tree tops:)", img: "https://res.cloudinary.com/dunundarj/image/upload/v1770884831/canton_kevwrm.jpg" },
+];
+
+// --- 3. ROAST REPOSITORY ---
+const failData = [
+    { text: "Reaction time of sloth, come on Mrigi, you are better than that!", meme: "https://media.tenor.com/UttKJzNT7uwAAAAM/funny-very.gif" },
+    { text: "Boo hoo, do you need a bigger paddle to play with?", meme: "https://en.meming.world/images/en/d/d4/Bill_Gates%27_Giant_Ping_Pong_Paddle.jpg" },
+    { text: "You should practice TT more often, Sid is getting better at it than you:P", meme: "https://i.imgflip.com/ajqr23.jpg" },
+    { text: "Mrigi: I am also a gamer because I used to play video games when I was young\n Mrigi:", meme: "https://i.pinimg.com/originals/a7/e4/cb/a7e4cb2c3829c9e3b43f3a9a1aa68597.gif" },
+    { text: "Your hand-eye coordination is purely theoretical.", meme: "https://66.media.tumblr.com/c184e7c1fc8aa6bfd6474f7dc4bdbc04/tumblr_mqnl2vb9fy1sp9fcho1_250.gif" },
+    { text: "Maybe you need this?", meme: "https://temeculacreekoptometrist.com/wp-content/uploads/2019/02/TCO-Feb-2019-2.jpg" },
+    { text: "The ball waiting for you like:", meme: "https://i.imgflip.com/ajqs5o.jpg" },
+    { text: "Sid's revenge:", meme: "https://i.imgflip.com/ajqtwb.jpg" },
+];
+
+// --- 4. GPS MATH ---
+function gpsToPixels(lat, lng) {
+    const w = 800, h = 500;
+    const x = (lng + 180) * (w / 360);
+    const latRad = lat * Math.PI / 180;
+    const mercN = Math.log(Math.tan((Math.PI / 4) + (latRad / 2)));
+    const y = (h / 2) - (w * mercN / (2 * Math.PI)) + 45; 
+    return { x, y };
+}
+
+const destinations = rawDestinations.map(d => {
+    const p = gpsToPixels(d.lat, d.lng);
+    return { ...d, x: p.x, y: p.y };
+});
+
+// --- 5. SCORE TRACKING ---
+let currentIdx = 0;
+let attempts = 0;
+let successes = 0;
+let paddle = { x: 340, w: 140, h: 20 };
+let ball = { x: 400, y: 300, dx: 4, dy: -4, r: 10 };
+let isRunning = false;
+
+function updateScoreboard() {
+    const winRate = attempts === 0 ? 0 : Math.round((successes / attempts) * 100);
+    document.getElementById('stress-display').innerText = winRate + "%";
+    // Update the label text as well
+    document.querySelector('.header').innerHTML = `VENUE: <span style="color:var(--accent)">${destinations[currentIdx].name}</span> | SUCCESS RATE: <span id="stress-display" style="color:var(--primary)">${winRate}%</span>`;
+}
+
+function move(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const scale = 800 / rect.width;
+    paddle.x = ((x - rect.left) * scale) - (paddle.w / 2);
+    if(e.touches) e.preventDefault();
+}
+canvas.addEventListener('mousemove', move);
+canvas.addEventListener('touchmove', move, {passive: false});
+
+function startGame() {
+    document.getElementById('start-overlay').style.display = 'none';
+    reset();
+}
+
+function loop() {
+    if (!isRunning) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const target = destinations[currentIdx];
+
+    // Draw Target
+    ctx.beginPath();
+    ctx.arc(target.x, target.y, 30, 0, Math.PI*2);
+    ctx.strokeStyle = "#d00000";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // Draw Paddle & Ball
+    ctx.fillStyle = "#0077b6";
+    ctx.fillRect(paddle.x, canvas.height - 50, paddle.w, paddle.h);
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+    ctx.fillStyle = "#000";
+    ctx.fill();
+
+    // Physics
+    ball.x += ball.dx; ball.y += ball.dy;
+
+    if (ball.x + ball.r > 800 || ball.x - ball.r < 0) ball.dx *= -1;
+    if (ball.y - ball.r < 0) ball.dy *= -1;
+
+    if (ball.y + ball.r > canvas.height - 50 && ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
+        ball.dy = -Math.abs(ball.dy) * 1.05;
+    }
+
+    // Victory
+    if (Math.hypot(ball.x - target.x, ball.y - target.y) < 35) {
+        isRunning = false;
+        successes++;
+        attempts++;
+        updateScoreboard();
+        showPostcard(target);
+        return;
+    }
+
+    // Failure
+    if (ball.y - ball.r > canvas.height) {
+        isRunning = false;
+        attempts++;
+        updateScoreboard();
+        showRoast();
+        return;
+    }
+    requestAnimationFrame(loop);
+}
+
+function showPostcard(target) {
+    document.getElementById('postcard-overlay').style.display = 'flex';
+    document.getElementById('p-title').innerText = "LOCATION: " + target.name;
+    document.getElementById('p-body').innerText = target.msg;
+  document.getElementById('p-image').src = target.img;
+}
+
+function showRoast() {
+    const roast = failData[Math.floor(Math.random() * failData.length)];
+    document.getElementById('roast-text').innerText = roast.text;
+    let roastOverlay = document.getElementById('roast-overlay');
+    let existingMeme = document.getElementById('roast-meme-img');
+    if (!existingMeme) {
+        existingMeme = document.createElement('img');
+        existingMeme.id = 'roast-meme-img';
+        existingMeme.style.maxWidth = '250px';
+        existingMeme.style.marginTop = '15px';
+        existingMeme.style.border = '2px solid black';
+        roastOverlay.insertBefore(existingMeme, roastOverlay.querySelector('button'));
+    }
+    existingMeme.src = roast.meme;
+    roastOverlay.style.display = 'flex';
+}
+
+function retry() {
+    document.getElementById('roast-overlay').style.display = 'none';
+    reset();
+}
+
+function nextLevel() {
+    currentIdx++;
+    document.getElementById('postcard-overlay').style.display = 'none';
+    
+    // Check if we reached the end of the tour
+    if (currentIdx >= destinations.length) {
+        showFinalResult();
+        return;
+    }
+    // Refresh the header text to show the NEW location name immediately
+    updateScoreboard();
+    reset();
+}
+
+function showFinalResult() {
+    const winRate = Math.round((successes / attempts) * 100);
+    let finalMsg = "";
+    let prizeMeme = "";
+
+    if (winRate >= 80) {
+        // SHE WINS
+        finalMsg = `YOU WON: ${winRate}% Accuracy! <br><br> Your performance was statistically significant. Your prize: Date Lunch + Candlelight Concert on 21st March in SF 🥂 (all paid by me)`;
+        prizeMeme = "https://media.feverup.com/image/upload/f_auto,w_800,c_fill/v1681285818/Header01_4096_hfbbab.jpg";
+    } else {
+        // YOU WIN
+        finalMsg = `YOU LOST: Only ${winRate}% Accuracy. <br><br> Date Lunch + Activity of your choice on 21st March in SF (all paid by you)`;
+        prizeMeme = "https://i.imgflip.com/ajqwh0.jpg";
+    }
+
+    // Reuse the Postcard Overlay for the final reveal
+    document.getElementById('postcard-overlay').style.display = 'flex';
+    document.getElementById('p-title').innerText = "FINAL VERDICT";
+    document.getElementById('p-body').innerHTML = finalMsg;
+    document.getElementById('p-image').src = prizeMeme;
+    
+    // Change the button to a "Restart" button
+    const btn = document.getElementById('next-btn');
+    btn.innerText = "RE-INITIALIZE TOUR";
+    btn.onclick = () => location.reload(); 
+
+    // Reset stats for next time
+    currentIdx = 0;
+    successes = 0;
+    attempts = 0;
+}
+
+function reset() {
+    updateScoreboard();
+    // Randomize horizontal direction: 
+    // (Math.random() - 0.5) gives a value between -0.5 and 0.5
+    // Multiplying by 8 gives a range between -4 and 4
+    const randomDx = (Math.random() - 0.5) * 10;
+
+    // Ensure it doesn't launch perfectly vertical (which is boring)
+    const finalDx = Math.abs(randomDx) < 1 ? (randomDx < 0 ? -3 : 3) : randomDx;
+    ball = { x: 400, y: 300, dx: randomDx, dy: -4, r: 10 };
+    isRunning = true;
+    requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
