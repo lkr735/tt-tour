@@ -181,9 +181,9 @@ function initiateSecurity() {
 }
 
 // Execute security before anything else
-// if (!initiateSecurity()) {
-//     throw new Error("Security Lockout because you are bad");
-// }
+if (!initiateSecurity()) {
+    throw new Error("Security Lockout because you are bad");
+}
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -376,7 +376,7 @@ function showFinalResult() {
         prizeMeme = "https://media.feverup.com/image/upload/f_auto,w_800,c_fill/v1681285818/Header01_4096_hfbbab.jpg";
     } else {
         // YOU WIN
-        finalMsg = `YOU LOST: Only ${winRate}% Accuracy. <br><br> Date Lunch + Activity of your choice on 21st March in SF (all paid by you)`;
+        finalMsg = `YOU LOST: Only ${winRate}% Accuracy. <br><br> My prize: Date Lunch + Activity of your choice on 21st March in SF (all paid by you:P)`;
         prizeMeme = "https://i.imgflip.com/ajqwh0.jpg";
     }
 
